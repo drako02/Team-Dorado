@@ -1,0 +1,42 @@
+#define trigPin 9    // Ultrasonic sensor trigger pin
+#define echoPin 10   // Ultrasonic sensor echo pin
+int relayPin = 7;   // Relay module pin
+int state = HIGH;    // Initialize relay state
+unsigned long previousMillis = 0; // Variable to store time since last detection
+const long detectionInterval = 5000; // Time interval in milliseconds to keep the light on after detection
+int detected = 0; // Flag to track if an object has been detected within the specified range
+
+void setup() {
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+  pinMode(relayPin, OUTPUT);
+  digitalWrite(relayPin, state); // Initialize relay
+  Serial.begin(9600); // Initialize serial communication
+}
+
+void loop() {
+  long duration, distance;
+  digitalWrite(trigPin, LOW); // Set trigger pin to low
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH); // Set trigger pin to high
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW); // Set trigger pin to low
+  duration = pulseIn(echoPin, HIGH); // Read echo pin value
+  distance = (duration/2) / 29.1; // Calculate distance in cm
+  Serial.println(distance); // Print distance to serial monitor
+
+  if (distance < 90) { // If object is within 30cm
+    detected = 1; // Set flag to indicate detection
+    previousMillis = millis(); // Record time of detection
+    digitalWrite(relayPin, LOW); // Turn on relay
+    state = HIGH; // Set relay state to on
+  }
+  else { // If object is farther than 30cm
+    if (detected == 1 && (millis() - previousMillis >= detectionInterval)) { // If an object was previously detected and the time interval has elapsed
+      detected = 0; // Reset detection flag
+      digitalWrite(relayPin, HIGH); // Turn off relay
+      state = LOW; // Set relay state to off
+    }
+  }
+  delay(100); // Wait for 100 milliseconds
+}
